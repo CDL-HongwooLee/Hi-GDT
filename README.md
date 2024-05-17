@@ -15,8 +15,10 @@ subprocess, numpy, pickle, multiprocessing, PIL, functools, itertools, scipy
 ## Usage
 
 ```
-usage: HiGDT.py [-h] -b BEDFILE -c CHROMSIZE -p PREFIX [-j JUICERTOOLS] [-hic HIC] [-n NORM] [--skip] [-i1 INFILE1] [-i2 INFILE2] [-o OUTDIR] [-bf BP_FRAG] [-f RESFILE] [-r1 RESOLUTION1] [-r2 RESOLUTION2]
-                [-c1 CUTOFF1] [-c2 CUTOFF2] [-s MAXSIZE] [-d MAXDIST] [-t THREADS]
+usage: HiGDT.py [-h] -b BEDFILE -c CHROMSIZE -p PREFIX [-j JUICERTOOLS] [-hic HIC] [-n NORM]
+                [--skip] [-i1 INFILE1] [-i2 INFILE2] [-o OUTDIR] [-bf BP_FRAG] [-f RESFILE]
+                [-r1 RESOLUTION1] [-r2 RESOLUTION2] [-c1 CUTOFF1] [-c2 CUTOFF2] [-s MAXSIZE]
+                [-d MAXDIST] [-t THREADS]
 
 optional arguments:
   -h, --help       show this help message and exit
