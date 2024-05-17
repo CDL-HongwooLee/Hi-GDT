@@ -15,12 +15,18 @@ subprocess, numpy, pickle, multiprocessing, PIL, functools, itertools, scipy
 ## Usage
 
 ```
-usage: HiGDT.py [-h] [-j JUICERTOOLS] [-hic HIC] [-n NORM] [--skip] [-i1 INFILE1] [-i2 INFILE2] -b BEDFILE -c CHROMSIZE -p PREFIX
-                [-o OUTDIR] [-bf BP_FRAG] [-f RESFILE] [-r1 RESOLUTION1] [-r2 RESOLUTION2]
+usage: HiGDT.py [-h] -b BEDFILE -c CHROMSIZE -p PREFIX [-j JUICERTOOLS] [-hic HIC] [-n NORM] [--skip] [-i1 INFILE1] [-i2 INFILE2] [-o OUTDIR] [-bf BP_FRAG] [-f RESFILE] [-r1 RESOLUTION1] [-r2 RESOLUTION2]
                 [-c1 CUTOFF1] [-c2 CUTOFF2] [-s MAXSIZE] [-d MAXDIST] [-t THREADS]
 
 optional arguments:
   -h, --help       show this help message and exit
+  -b BEDFILE       Path to the .bed file which includes genic information.
+                   The 4th column should contain the label of each element.
+
+  -c CHROMSIZE     Path to the .chrom.sizes file.
+
+  -p PREFIX        Prefix for naming output files.
+
   -j JUICERTOOLS   Path to the juicer_tools.jar file. Not required if the "--skip" option is used.
 
   -hic HIC         Path to the .hic file. Not required if the "--skip" option is used.
@@ -38,13 +44,6 @@ optional arguments:
 
   -i2 INFILE2      Path to the input matrix.pickle file generated at resolution2 (r2).
                    Required only if r1 != r2.
-
-  -b BEDFILE       Path to the .bed file which includes genic information.
-                   The 4th column should contain the label of each element.
-
-  -c CHROMSIZE     Path to the .chrom.sizes file.
-
-  -p PREFIX        Prefix for naming output files.
 
   -o OUTDIR        Path to the output directory where whole output files will be written.
                    Default = './'.
