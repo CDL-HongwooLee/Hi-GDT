@@ -9,7 +9,7 @@ python3 >= 3.8.
 Required packages: subprocess, numpy, pickle, multiprocessing, PIL, functools, itertools, scipy
 
 
-## Quick start
+# Quick start
 
 ## HiGDT.py
 
