@@ -6,8 +6,7 @@ For any question about Hi-GDT, please contact miso5103@snu.ac.kr
 # Dependencies
 python3 >= 3.8.
 
-Required packages
-subprocess, numpy, pickle, multiprocessing, PIL, functools, itertools, scipy
+Required packages: subprocess, numpy, pickle, multiprocessing, PIL, functools, itertools, scipy
 
 
 # Quick start
