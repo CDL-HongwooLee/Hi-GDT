@@ -3,17 +3,17 @@
 
 For any question about Hi-GDT, please contact miso5103@snu.ac.kr
 
-# Dependencies
+## Dependencies
 python3 >= 3.8.
 
 Required packages: subprocess, numpy, pickle, multiprocessing, PIL, functools, itertools, scipy
 
 
-# Quick start
+## Quick start
 
-## HiGDT.py
+### HiGDT.py
 
-### Usage
+#### Usage
 
 ```
 usage: HiGDT.py [-h] -b BEDFILE -c CHROMSIZE -p PREFIX [-j JUICERTOOLS] [-hic HIC] [-n NORM] [--skip] [-i1 INFILE1] [-i2 INFILE2]
@@ -83,9 +83,9 @@ optional arguments:
                    Default = 1.
 
 ```
-## HiGDTdiff.py
+### HiGDTdiff.py
 
-### Usage
+#### Usage
 
 ```
 usage: HiGDTdiff.py [-h] -pk1 PICKLE1 -pk2 PICKLE2 -gd1 GENEDOMAIN1 -gd2 GENEDOMAIN2 -b BEDFILE -r REFILE -p PREFIX [-f FLANKING] [-l LCUT] [-fc FC] [-c CUTOFF] [-o OUTDIR] [--norm]
@@ -138,9 +138,9 @@ optional arguments:
 
 ```
 
-## PileUpImage.py
+### PileUpImage.py
 
-### Usage
+#### Usage
 
 ```
 usage: PileUpImage.py [-h] -b BEDFILE -c CHROMSIZE -f REFILE -p PREFIX -r RESOLUTION [-j JUICERTOOLS] [-hic HIC] [-n NORM] [--skip] [-i INFILE] [-bf BP_FRAG] [-s IMGSIZE] [-bs BINSIZE] [-pad PADDING] [-o OUTDIR]
