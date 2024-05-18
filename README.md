@@ -10,8 +10,20 @@ python3 >= 3.8.
 
 Required packages: subprocess, numpy, pickle, multiprocessing, PIL, functools, itertools, scipy
 
+## Installation
+Github install
+
+```
+git clone https://github.com/CDL-HongwooLee/Hi-GDT
+```
 
 # Quick start
+
+Hi-GDT starts from .hic file generated from juicer (https://github.com/aidenlab/juicer/wiki)
+
+1. HiGDT.py identifies single-gene domains and multigene domains from input .hic file.
+2. HiGDTdiff.py finds differential single-gene domains from two different Hi-C datasets
+(+ optional) PileUpImage.py make images.pickle file that includes resized Hi-C contact images of given regions (.bed)
 
 ## HiGDT.py
 
