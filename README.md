@@ -119,7 +119,6 @@ Chromosome  start  end  label(geneID)  .  strand
 ```
 Chr1    3631    5899    AT1G01010       .       +
 Chr1    6788    9130    AT1G01020       .       -
-...
 ```
 
 ##### Matrix.pickle file
@@ -141,10 +140,14 @@ Chr1    250     500     2
 ##### Single, Multi, MergedGeneDomain.txt
 Output files contain HiGDT-identified gene domains.
 
-Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues(2 columns for single, 6 columns for multi)
+Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues(2 columns for single, 6 columns for multi)/
+<br/>
 SingleGeneDomain.txt
+<br/>
 ```Chr1    23121   31227   AT1G01040       1       +       2.17e-12  3.33e-05```
+<br/>
 MultiGeneDomain.txt
+<br/>
 ```Chr1    23121   33171   AT1G01040:AT1G01050     2       +:-     1.53e-08  1.53e-08  3.34e-17  3.34e-17  3.34e-17  1.53e-08```
 
 ##### Single, Multi, MergedGeneDomain.juicebox.bed
@@ -216,13 +219,16 @@ All input files except .bed file are produced from ```HiGDT.py```.
 
 ### Output data format
 Output file is generated with the name of {prefix}.HiGDTdiff.out.txt.
+<br/>
 This file contains information of surrounding contact frequencies (SFCs).
-
+<br/>
 Label(geneID)  length  avg.SFCs_in_control  avg.SFCs_in_treat  p_value  difference_of_SFCs
+<br/>
 ```
 AT1G03660       2499    0.9165746591988603      0.6724238539999999      0.01098992240721745     activated in treatment
 AT1G05160       3628    0.980855183033591       1.3256988979375 0.012483098145865642    activated in control
 ```
+<br/>
 'Activate in treatment' indicates SFCs significantly decreased in treatment Hi-C data
 
 
