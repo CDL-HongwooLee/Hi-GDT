@@ -121,9 +121,9 @@ python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pickle -i2 example/At
 #### (-b) .bed file 
 Bed file with 6 columns includes genomic information. Label for each row should be placed in column 4.
 
+```
 Chromosome  start  end  label(geneID)  .  strand
 
-```
 Chr1    3631    5899    AT1G01010       .       +
 Chr1    6788    9130    AT1G01020       .       -
 ```
@@ -144,7 +144,7 @@ Chr1    1       250     1
 Chr1    250     500     2
 ```
 
-##### Single, Multi, MergedGeneDomain.txt
+#### Single, Multi, MergedGeneDomain.txt
 Output files contain HiGDT-identified gene domains.
 
 Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues(2 columns for single, 6 columns for multi).
@@ -165,7 +165,7 @@ MultiGeneDomain.txt
 Chr1    23121   33171   AT1G01040:AT1G01050     2       +:-     1.53e-08  1.53e-08  3.34e-17  3.34e-17  3.34e-17  1.53e-08
 ```
 
-##### Single, Multi, MergedGeneDomain.juicebox.bed
+#### Single, Multi, MergedGeneDomain.juicebox.bed
 Modified output files for juicebox visualization.
 
 
@@ -240,11 +240,9 @@ Output file is generated with the name of {prefix}.HiGDTdiff.out.txt.
 
 This file contains information of surrounding contact frequencies (SFCs).
 
-
+```
 Label(geneID)  length  avg.SFCs_in_control  avg.SFCs_in_treat  p_value  difference_of_SFCs
 
-
-```
 AT1G03660       2499    0.9165746591988603      0.6724238539999999      0.01098992240721745     activated in treatment
 AT1G05160       3628    0.980855183033591       1.3256988979375 0.012483098145865642    activated in control
 ```
@@ -323,16 +321,23 @@ optional arguments:
 
 ### Example run
 To make pile-up analysis for whole genes (or specifies certain regions by changing .bed file). Recommend to analyze for whole-genome and post-process with ```PileUpImage.py``` output file.
-<br/>
-```python3 PileUpImage.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5```
-<br/>
+
+
+```
+python3 PileUpImage.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5
+```
+
+
 Or (if you generated matrix.pickle files before, the below is slightly faster command).
-<br/>
-```python3 PileUpImage.py --skip -i example/Athaliana.250BP.matrix.pickle -bf BP -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5```
+
+
+```
+python3 PileUpImage.py --skip -i example/Athaliana.250BP.matrix.pickle -bf BP -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5
+```
 
 ### Output data format
 Output file is compressed dictionary file (.pickle).
 The keys of the dictionary are Labels(geneIDs), and the values of the dictionary are resized Hi-C images of specified regions.
 
 This file can be easily visualized by python code or jupyter notebook(strongly recommended!!).
-The example codes visualizing pild-up images are attached (```PileupTest.ipynb```).
+The example codes visualizing piled-up images are attached (```PileupTest.ipynb```).
