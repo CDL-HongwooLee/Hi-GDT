@@ -22,9 +22,10 @@ git clone https://github.com/CDL-HongwooLee/Hi-GDT
 Hi-GDT starts from .hic file generated from juicer (https://github.com/aidenlab/juicer/wiki)
 
 1. ```HiGDT.py``` identifies single-gene domains and multigene domains from input .hic file.
-2. ```HiGDTdiff.py``` finds differential single-gene domains from two different Hi-C datasets
-<br/>
-(+ optional). ```PileUpImage.py``` make images.pickle file that includes resized Hi-C contact images of given regions (.bed)
+2. ```HiGDTdiff.py``` finds differential single-gene domains from two different Hi-C datasets.
+
+(Optional) ```PileUpImage.py``` makes images.pickle file that includes resized Hi-C contact images of given regions (.bed).
+```PileUpImage.py```
 
 ## HiGDT.py
 
@@ -102,13 +103,16 @@ optional arguments:
 ### Example run
 
 Using 250 bp resolution for single-gene domain identification, and 500 bp resolution for multigene domain identification (default).
-<br/>
+
+
 ```
 python3 HiGDT.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana -bf BP -r1 250 -r2 500 -t 5
 ```
-<br/>
+
+
 Or (if you generated matrix.pickle files before, the below is slightly faster command)
-<br/>
+
+
 ```
 python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pickle -i2 example/Athaliana.500BP.matrix.pickle -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana.v2 -bf BP -r1 250 -r2 500 -t 5
 ```
