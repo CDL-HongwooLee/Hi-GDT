@@ -97,6 +97,43 @@ optional arguments:
                    Default = 1.
 
 ```
+
+### Example run
+
+Using 250 bp resolution for single-gene domain identification, and 500 bp resolution for multigene domain identification (default)
+```python3 HiGDT.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana -bf BP -r1 250 -r2 500 -t 5```
+Or (if you generated matrix.pickle files before)
+```python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pickle -i2 example/Athaliana.500BP.matrix.pickle -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana.v2 -bf BP -r1 250 -r2 500 -t 5```
+
+### Input data format
+
+##### (-b) .bed file 
+Bed file with 6 columns includes genomic information. Label for each row should be placed in column 4.
+
+Chromosome  start  end  label(geneID)  .  strand
+
+```
+Chr1    3631    5899    AT1G01010       .       +
+Chr1    6788    9130    AT1G01020       .       -
+...
+```
+
+##### Matrix.pickle file
+```HiGDT.py``` generates compressed .matrix.pickle files that includes dumped Hi-C matrix information in dictionary format.
+A matrix.pickle file can be used as input for ```HiGDT.py``` and ```PileUpImage.py```
+
+### Output data format
+```HiGDT.py``` makes 8 (when r1==r2) or 10 (r1!=r2) files in the specified output directory.
+
+##### Fragment.bed file
+```HiGDT.py``` makes fragment.bed file at given resolution.
+
+Chromosome  start  end  fragment_number
+```
+Chr1    1       250     1
+Chr1    250     500     2
+```
+
 ## HiGDTdiff.py
 
 ### Usage
