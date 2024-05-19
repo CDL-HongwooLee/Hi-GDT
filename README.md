@@ -24,7 +24,7 @@ Hi-GDT starts from .hic file generated from juicer (https://github.com/aidenlab/
 1. ```HiGDT.py``` identifies single-gene domains and multigene domains from input .hic file.
 2. ```HiGDTdiff.py``` finds differential single-gene domains from two different Hi-C datasets
 <br/>
-(+ optional) ```PileUpImage.py``` make images.pickle file that includes resized Hi-C contact images of given regions (.bed)
+(+ optional). ```PileUpImage.py``` make images.pickle file that includes resized Hi-C contact images of given regions (.bed)
 
 ## HiGDT.py
 
@@ -103,11 +103,15 @@ optional arguments:
 
 Using 250 bp resolution for single-gene domain identification, and 500 bp resolution for multigene domain identification (default).
 <br/>
-```python3 HiGDT.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana -bf BP -r1 250 -r2 500 -t 5```
+```
+python3 HiGDT.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana -bf BP -r1 250 -r2 500 -t 5
+```
 <br/>
 Or (if you generated matrix.pickle files before, the below is slightly faster command)
 <br/>
-```python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pickle -i2 example/Athaliana.500BP.matrix.pickle -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana.v2 -bf BP -r1 250 -r2 500 -t 5```
+```
+python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pickle -i2 example/Athaliana.500BP.matrix.pickle -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana.v2 -bf BP -r1 250 -r2 500 -t 5
+```
 
 ### Input data format
 
@@ -140,7 +144,8 @@ Chr1    250     500     2
 ##### Single, Multi, MergedGeneDomain.txt
 Output files contain HiGDT-identified gene domains.
 
-Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues(2 columns for single, 6 columns for multi)/
+Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues(2 columns for single, 6 columns for multi).
+<br/>
 <br/>
 SingleGeneDomain.txt
 <br/>
@@ -211,8 +216,10 @@ optional arguments:
 
 ### Example run
 
-```python3 HiGDTdiff.py -pk1 example/Athaliana_Control.250BP.matrix.pickle -pk2 example/Athaliana_Treat.250BP.matrix.pickle -gd1 example/Athaliana_Control.SingleGeneDomain.txt -gd2 example/Athaliana_Treat.SingleGeneDomain.txt 
--b Araport11_gene_protein_coding.1-genes.bed -r example/Athaliana_Control.250BP.bed -f 2000 -l 1000 -fc 0.15 -o example -p Athaliana_diff --norm```
+```
+python3 HiGDTdiff.py -pk1 example/Athaliana_Control.250BP.matrix.pickle -pk2 example/Athaliana_Treat.250BP.matrix.pickle -gd1 example/Athaliana_Control.SingleGeneDomain.txt -gd2 example/Athaliana_Treat.SingleGeneDomain.txt 
+-b Araport11_gene_protein_coding.1-genes.bed -r example/Athaliana_Control.250BP.bed -f 2000 -l 1000 -fc 0.15 -o example -p Athaliana_diff --norm
+```
 
 ### Input information
 All input files except .bed file are produced from ```HiGDT.py```.
