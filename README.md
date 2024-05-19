@@ -102,7 +102,9 @@ optional arguments:
 
 Using 250 bp resolution for single-gene domain identification, and 500 bp resolution for multigene domain identification (default)
 ```python3 HiGDT.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana -bf BP -r1 250 -r2 500 -t 5```
+<br/>
 Or (if you generated matrix.pickle files before, the below is slightly faster command)
+<br/>
 ```python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pickle -i2 example/Athaliana.500BP.matrix.pickle -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana.v2 -bf BP -r1 250 -r2 500 -t 5```
 
 ### Input data format
