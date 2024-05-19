@@ -23,7 +23,8 @@ Hi-GDT starts from .hic file generated from juicer (https://github.com/aidenlab/
 
 1. ```HiGDT.py``` identifies single-gene domains and multigene domains from input .hic file.
 2. ```HiGDTdiff.py``` finds differential single-gene domains from two different Hi-C datasets
-<br/>(+ optional) ```PileUpImage.py``` make images.pickle file that includes resized Hi-C contact images of given regions (.bed)
+<br/>
+(+ optional) ```PileUpImage.py``` make images.pickle file that includes resized Hi-C contact images of given regions (.bed)
 
 ## HiGDT.py
 
@@ -100,7 +101,8 @@ optional arguments:
 
 ### Example run
 
-Using 250 bp resolution for single-gene domain identification, and 500 bp resolution for multigene domain identification (default)
+Using 250 bp resolution for single-gene domain identification, and 500 bp resolution for multigene domain identification (default).
+<br/>
 ```python3 HiGDT.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana -bf BP -r1 250 -r2 500 -t 5```
 <br/>
 Or (if you generated matrix.pickle files before, the below is slightly faster command)
@@ -294,8 +296,11 @@ optional arguments:
 
 ### Example run
 To make pile-up analysis for whole genes (or specifies certain regions by changing .bed file). Recommend to analyze for whole-genome and post-process with ```PileUpImage.py``` output file.
+<br/>
 ```python3 PileUpImage.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5```
-Or (if you generated matrix.pickle files before, the below is slightly faster command)
+<br/>
+Or (if you generated matrix.pickle files before, the below is slightly faster command).
+<br/>
 ```python3 PileUpImage.py --skip -i example/Athaliana.250BP.matrix.pickle -bf BP -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5```
 
 ### Output data format
