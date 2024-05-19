@@ -228,7 +228,7 @@ def IdentifySingleGeneDomain(outdir, prefix, minMaxDic, IFdic, chromlist, window
 
     chroms = ' '.join(chromlist)
     sp.run(f"parallel -j 1 \"cat {outdir}/tmp/{prefix}.{{1}}.single.tmp\" ::: $(echo {chroms}) > {outdir}/tmp/{prefix}.single.tmp", shell=True)
-    sp.run(f"less {outdir}/tmp/{prefix}.single.tmp | awk '$9==\"Single\"' > {outdir}/{prefix}.SingleGeneDomain.txt", shell=True)
+    sp.run(f"less {outdir}/tmp/{prefix}.single.tmp | awk '$9==\"Single\"' | cut -f -8 > {outdir}/{prefix}.SingleGeneDomain.txt", shell=True)
 
 def CompareSingle(outdir, prefix, window, minN, p_cutoff, chrom, IFdic, minMaxDic):
     gl = list(minMaxDic.keys())
