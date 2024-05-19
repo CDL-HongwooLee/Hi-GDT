@@ -102,7 +102,7 @@ optional arguments:
 
 Using 250 bp resolution for single-gene domain identification, and 500 bp resolution for multigene domain identification (default)
 ```python3 HiGDT.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana -bf BP -r1 250 -r2 500 -t 5```
-Or (if you generated matrix.pickle files before)
+Or (if you generated matrix.pickle files before, the below is slightly faster command)
 ```python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pickle -i2 example/Athaliana.500BP.matrix.pickle -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana.v2 -bf BP -r1 250 -r2 500 -t 5```
 
 ### Input data format
@@ -133,6 +133,19 @@ Chromosome  start  end  fragment_number
 Chr1    1       250     1
 Chr1    250     500     2
 ```
+
+##### Single, Multi, MergedGeneDomain.txt
+Output files contain HiGDT-identified gene domains.
+
+Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues(2 columns for single, 6 columns for multi)
+SingleGeneDomain.txt
+```Chr1    23121   31227   AT1G01040       1       +       2.17e-12  3.33e-05```
+MultiGeneDomain.txt
+```Chr1    23121   33171   AT1G01040:AT1G01050     2       +:-     1.53e-08  1.53e-08  3.34e-17  3.34e-17  3.34e-17  1.53e-08```
+
+##### Single, Multi, MergedGeneDomain.juicebox.bed
+Modified output files for juicebox visualization.
+
 
 ## HiGDTdiff.py
 
@@ -188,6 +201,26 @@ optional arguments:
                     Default = False.
 
 ```
+
+### Example run
+
+```python3 HiGDTdiff.py -pk1 example/Athaliana_Control.250BP.matrix.pickle -pk2 example/Athaliana_Treat.250BP.matrix.pickle -gd1 example/Athaliana_Control.SingleGeneDomain.txt -gd2 example/Athaliana_Treat.SingleGeneDomain.txt 
+-b Araport11_gene_protein_coding.1-genes.bed -r example/Athaliana_Control.250BP.bed -f 2000 -l 1000 -fc 0.15 -o example -p Athaliana_diff --norm```
+
+### Input information
+All input files except .bed file are produced from ```HiGDT.py```.
+
+### Output data format
+Output file is generated with the name of {prefix}.HiGDTdiff.out.txt.
+This file contains information of surrounding contact frequencies (SFCs).
+
+Label(geneID)  length  avg.SFCs_in_control  avg.SFCs_in_treat  p_value  difference_of_SFCs
+```
+AT1G03660       2499    0.9165746591988603      0.6724238539999999      0.01098992240721745     activated in treatment
+AT1G05160       3628    0.980855183033591       1.3256988979375 0.012483098145865642    activated in control
+```
+'Activate in treatment' indicates SFCs significantly decreased in treatment Hi-C data
+
 
 ## PileUpImage.py
 
@@ -256,3 +289,16 @@ optional arguments:
                   Default = 1.
 
 ```
+
+### Example run
+To make pile-up analysis for whole genes (or specifies certain regions by changing .bed file). Recommend to analyze for whole-genome and post-process with ```PileUpImage.py``` output file.
+```python3 PileUpImage.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5```
+Or (if you generated matrix.pickle files before, the below is slightly faster command)
+```python3 PileUpImage.py --skip -i example/Athaliana.250BP.matrix.pickle -bf BP -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5```
+
+### Output data format
+Output file is compressed dictionary file (.pickle).
+The keys of the dictionary are Labels(geneIDs), and the values of the dictionary are resized Hi-C images of specified regions.
+
+This file can be easily visualized by python code or jupyter notebook(strongly recommended!!).
+The example codes visualizing pild-up images are attached (```PileupTest.ipynb```).
