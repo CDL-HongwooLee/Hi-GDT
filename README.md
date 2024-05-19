@@ -138,8 +138,9 @@ A matrix.pickle file can be used as input for ```HiGDT.py``` and ```PileUpImage.
 #### Fragment.bed file
 ```HiGDT.py``` makes fragment.bed file at given resolution.
 
-Chromosome  start  end  fragment_number
 ```
+Chromosome  start  end  fragment_number
+
 Chr1    1       250     1
 Chr1    250     500     2
 ```
@@ -147,13 +148,12 @@ Chr1    250     500     2
 #### Single, Multi, MergedGeneDomain.txt
 Output files contain HiGDT-identified gene domains.
 
-Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues(2 columns for single, 6 columns for multi).
-<br/>
-<br/>
+
 SingleGeneDomain.txt
 
 
 ```
+Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues1-2
 Chr1    23121   31227   AT1G01040       1       +       2.17e-12  3.33e-05
 ```
 
@@ -162,6 +162,7 @@ MultiGeneDomain.txt
 
 
 ```
+Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues1-6
 Chr1    23121   33171   AT1G01040:AT1G01050     2       +:-     1.53e-08  1.53e-08  3.34e-17  3.34e-17  3.34e-17  1.53e-08
 ```
 
