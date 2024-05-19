@@ -25,7 +25,6 @@ Hi-GDT starts from .hic file generated from juicer (https://github.com/aidenlab/
 2. ```HiGDTdiff.py``` finds differential single-gene domains from two different Hi-C datasets.
 
 (Optional) ```PileUpImage.py``` makes images.pickle file that includes resized Hi-C contact images of given regions (.bed).
-```PileUpImage.py```
 
 ## HiGDT.py
 
@@ -119,7 +118,7 @@ python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pickle -i2 example/At
 
 ### Input data format
 
-##### (-b) .bed file 
+#### (-b) .bed file 
 Bed file with 6 columns includes genomic information. Label for each row should be placed in column 4.
 
 Chromosome  start  end  label(geneID)  .  strand
@@ -129,14 +128,14 @@ Chr1    3631    5899    AT1G01010       .       +
 Chr1    6788    9130    AT1G01020       .       -
 ```
 
-##### Matrix.pickle file
+#### Matrix.pickle file
 ```HiGDT.py``` generates compressed .matrix.pickle files that includes dumped Hi-C matrix information in dictionary format.
 A matrix.pickle file can be used as input for ```HiGDT.py``` and ```PileUpImage.py```
 
 ### Output data format
 ```HiGDT.py``` makes 8 (when r1==r2) or 10 (r1!=r2) files in the specified output directory.
 
-##### Fragment.bed file
+#### Fragment.bed file
 ```HiGDT.py``` makes fragment.bed file at given resolution.
 
 Chromosome  start  end  fragment_number
@@ -152,12 +151,19 @@ Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues(2 columns for s
 <br/>
 <br/>
 SingleGeneDomain.txt
-<br/>
-```Chr1    23121   31227   AT1G01040       1       +       2.17e-12  3.33e-05```
-<br/>
+
+
+```
+Chr1    23121   31227   AT1G01040       1       +       2.17e-12  3.33e-05
+```
+
+
 MultiGeneDomain.txt
-<br/>
-```Chr1    23121   33171   AT1G01040:AT1G01050     2       +:-     1.53e-08  1.53e-08  3.34e-17  3.34e-17  3.34e-17  1.53e-08```
+
+
+```
+Chr1    23121   33171   AT1G01040:AT1G01050     2       +:-     1.53e-08  1.53e-08  3.34e-17  3.34e-17  3.34e-17  1.53e-08
+```
 
 ##### Single, Multi, MergedGeneDomain.juicebox.bed
 Modified output files for juicebox visualization.
@@ -230,16 +236,20 @@ All input files except .bed file are produced from ```HiGDT.py```.
 
 ### Output data format
 Output file is generated with the name of {prefix}.HiGDTdiff.out.txt.
-<br/>
+
+
 This file contains information of surrounding contact frequencies (SFCs).
-<br/>
+
+
 Label(geneID)  length  avg.SFCs_in_control  avg.SFCs_in_treat  p_value  difference_of_SFCs
-<br/>
+
+
 ```
 AT1G03660       2499    0.9165746591988603      0.6724238539999999      0.01098992240721745     activated in treatment
 AT1G05160       3628    0.980855183033591       1.3256988979375 0.012483098145865642    activated in control
 ```
-<br/>
+
+
 'Activate in treatment' indicates SFCs significantly decreased in treatment Hi-C data
 
 
