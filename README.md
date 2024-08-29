@@ -21,10 +21,10 @@ git clone https://github.com/CDL-HongwooLee/Hi-GDT
 
 Hi-GDT starts from .hic file generated from juicer (https://github.com/aidenlab/juicer/wiki)
 
-1. ```HiGDT.py``` identifies single-gene domains and multigene domains from input .hic file.
-2. ```HiGDTdiff.py``` finds differential single-gene domains from two different Hi-C datasets.
+1. ```HiGDT.py``` identifies single-gene domains and multigene domains from an input .hic file.
+2. ```HiGDTdiff.py``` finds differential single-gene domains across two different Hi-C datasets.
 
-(Optional) ```PileUpImage.py``` makes images.pickle file that includes resized Hi-C contact images of given regions (.bed).
+(Optional) ```PileUpImage.py``` makes images.pkl file that includes resized Hi-C contact images of given regions (.bed).
 
 ## HiGDT.py
 
