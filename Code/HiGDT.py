@@ -3,8 +3,10 @@ import sys
 import argparse
 import os
 import numpy as np
+import pandas as pd
 import pickle
 from scipy import stats
+from statsmodels.stats.multitest import multipletests
 import time
 import multiprocessing as mp
 from functools import partial
@@ -35,16 +37,16 @@ Not required if the "--skip" option is used.
 Default = 'SCALE'.
     ''')
     parser.add_argument('--skip', dest = 'skip', action='store_true', help = 
-    '''Use this flag to skip generating matrix.pickle file(s) from a .hic file. 
-You can use this flag if you've previously generated matrix.pickle file(s) using HiGDT.py.
-if set, -i1 {matrix.pickle} [-i2 {matrix2.pickle}] option(s) is required for input file(s).
+    '''Use this flag to skip generating matrix.pkl file(s) from a .hic file. 
+You can use this flag if you've previously generated matrix.pkl file(s) using HiGDT.py.
+if set, -i1 {matrix.pkl} [-i2 {matrix2.pkl}] option(s) is required for input file(s).
     ''')
     parser.add_argument('-i1', dest = 'infile1', default = False, help = 
-    '''Path to the input matrix.pickle file generated at resolution1 (r1).
-By default, this file is generated at {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pickle.
+    '''Path to the input matrix.pkl file generated at resolution1 (r1).
+By default, this file is generated at {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pkl.
     ''')
     parser.add_argument('-i2', dest = 'infile2', default = False, help = 
-    '''Path to the input matrix.pickle file generated at resolution2 (r2). 
+    '''Path to the input matrix.pkl file generated at resolution2 (r2). 
 Required only if r1 != r2.
     ''')
 
@@ -73,14 +75,23 @@ r2 = 500 (BP) or r2 = 2 (FRAG) is recommended if you have enough sequencing dept
 Default = 500 (BP). 
     ''')
     parser.add_argument('-c1', dest = 'cutoff1', default = 0.05, type = float, help = 
-    '''P-value cutoff for single-gene domain analysis.
+    '''Statistical cutoff value for single-gene domain analysis.
 Default = 0.05.
     ''')
     parser.add_argument('-c2', dest = 'cutoff2', default = 0.05, type = float, help = 
     '''P-value cutoff for multi-gene domain analysis.
 Default = 0.05.
     ''')
-    parser.add_argument('-s', dest = 'maxSize', default = 10, type = int, help = 
+    parser.add_argument('--pvalue', dest = 'fdr', action='store_false', help = 
+    '''Using P-value instead of false discovery rate (fdr).
+Default = False. (Use FDR)
+    ''')
+    parser.add_argument('-l', dest = 'lcut', default=1000, type=int, help = 
+    '''The size cutoff (bp) of genes for the comparison. 
+Should be larger than (resolution x 4).
+Default = 1000.
+    ''')
+    parser.add_argument('-m', dest = 'maxMultiN', default = 10, type = int, help = 
     '''The maximum number of genes in a multi-gene domain.
 Larger number may slow down the analysis.
 Default = 10.
@@ -95,29 +106,32 @@ Default = 1.
     ''')
     return parser.parse_args()
 
-def getVariables(chromsize, resfile1, resfile2, bedfile):
-    chromlist = sp.check_output(f'less {chromsize} | cut -f 1', shell=True, universal_newlines=True).rstrip().split('\n')
-    chrStartFragNumDic1 = dict() ; chrEndFragNumDic1 = dict() ; chrStartFragNumDic2 = dict() ; chrEndFragNumDic2 = dict()
+def getVariables(chromsize, resfile1, resfile2, bedfile, lcut):
+    chromLengthDic = dict()
+    with open(chromsize) as c1:
+        for line in c1:
+            chrom, end = line.rstrip().split('\t')
+            chromLengthDic[chrom] = int(end)
+    chrStartFragNumDic1 = dict() ; chrStartFragNumDic2 = dict()
     chrStartEndFragList1 = sp.check_output(f'less {resfile1} | datamash groupby 1 min 4 max 4', shell=True, universal_newlines=True).strip().split('\n')
     chrStartEndFragList2 = sp.check_output(f'less {resfile2} | datamash groupby 1 min 4 max 4', shell=True, universal_newlines=True).strip().split('\n')
     for line in chrStartEndFragList1:
         chr, start, end = line.rstrip().split('\t')
         chrStartFragNumDic1[chr] = int(start)
-        chrEndFragNumDic1[chr] = int(end)
     for line in chrStartEndFragList2:
         chr, start, end = line.rstrip().split('\t')
         chrStartFragNumDic2[chr] = int(start)
-        chrEndFragNumDic2[chr] = int(end)
 
-    startDic = dict() ; endDic = dict() ; strandDic = dict()
+    startDic = dict() ; endDic = dict() ; strandDic = dict() ; filtered = list()
     with open(bedfile) as b1:
         for line in b1:
             _, start, end, geneid, _, strand = line.rstrip().split('\t')
             startDic[geneid] = start
             endDic[geneid] = end
             strandDic[geneid] = strand
-
-    return chromlist, chrStartFragNumDic1, chrEndFragNumDic1, chrStartFragNumDic2, chrEndFragNumDic2, startDic, endDic, strandDic
+            if int(end) - int(start) >= lcut:
+                filtered.append(geneid)
+    return list(chromLengthDic.keys()), chromLengthDic, chrStartFragNumDic1, chrStartFragNumDic2, startDic, endDic, strandDic, filtered
 
 def MaketmpDir(outdir):
     if os.path.isdir(f'{outdir}') == False:
@@ -144,17 +158,17 @@ def MakeIFpickleFiles(outdir, prefix, chrStartFragNumDic1, chrStartFragNumDic2, 
         
     mergedDic1 = dict()
     for chrom in chromlist:
-        with open(f'{outdir}/tmp/{prefix}.{chrom}_{chrom}.{res1}{bf}.matrix.pickle', 'rb') as pk:
+        with open(f'{outdir}/tmp/{prefix}.{chrom}_{chrom}.{res1}{bf}.matrix.pkl', 'rb') as pk:
             mergedDic1[chrom] = pickle.load(pk)
-    with open(f'{outdir}/{prefix}.{res1}{bf}.matrix.pickle','wb') as pko:
+    with open(f'{outdir}/{prefix}.{res1}{bf}.matrix.pkl','wb') as pko:
         pickle.dump(mergedDic1, pko)
 
     if res1 != res2:
         mergedDic2 = dict()
         for chrom in chromlist:
-            with open(f'{outdir}/tmp/{prefix}.{chrom}_{chrom}.{res2}{bf}.matrix.pickle', 'rb') as pk:
+            with open(f'{outdir}/tmp/{prefix}.{chrom}_{chrom}.{res2}{bf}.matrix.pkl', 'rb') as pk:
                 mergedDic2[chrom] = pickle.load(pk)
-        with open(f'{outdir}/{prefix}.{res2}{bf}.matrix.pickle','wb') as pko:
+        with open(f'{outdir}/{prefix}.{res2}{bf}.matrix.pkl','wb') as pko:
             pickle.dump(mergedDic2, pko)
 
         return mergedDic1, mergedDic2
@@ -164,7 +178,7 @@ def MakeChrompickle(outdir, prefix, bf, params):
     chrom, (res, chrStartFragNumDic) = params
     chromIFdic = dict()
     chrStart = chrStartFragNumDic[chrom]
-    with open(f'{outdir}/tmp/{prefix}.{chrom}_{chrom}.{res}{bf}.txt') as i1, open(f'{outdir}/tmp/{prefix}.{chrom}_{chrom}.{res}{bf}.matrix.pickle', 'wb') as p1:
+    with open(f'{outdir}/tmp/{prefix}.{chrom}_{chrom}.{res}{bf}.txt') as i1, open(f'{outdir}/tmp/{prefix}.{chrom}_{chrom}.{res}{bf}.matrix.pkl', 'wb') as p1:
         for line in i1:
             bin1, bin2, value = line.rstrip().split('\t')
             if bin1 == bin2:
@@ -219,19 +233,25 @@ def makeBPbed(outdir, prefix, res1, res2, chromfile):
                 x=x+i+1
     return f'{outdir}/{prefix}.{res1}BP.bed', f'{outdir}/{prefix}.{res2}BP.bed'
 
-def IdentifySingleGeneDomain(outdir, prefix, minMaxDic, IFdic, chromlist, window, p_cutoff, t, minN=3):
+def IdentifySingleGeneDomain(outdir, prefix, minMaxDic, IFdic, chromlist, window, cutoff, fdr, genelist, t, minN=3):
     pool = mp.Pool(processes=t)
-    single_parallel = partial(CompareSingle, outdir, prefix, window, minN, p_cutoff)
+    single_parallel = partial(CompareSingle, outdir, prefix, window, minN, cutoff, genelist)
     pool.starmap(single_parallel, zip(chromlist, list(IFdic.values()), list(minMaxDic.values())))
     pool.close()
     pool.join()
 
     chroms = ' '.join(chromlist)
     sp.run(f"parallel -j 1 \"cat {outdir}/tmp/{prefix}.{{1}}.single.tmp\" ::: $(echo {chroms}) > {outdir}/tmp/{prefix}.single.tmp", shell=True)
-    sp.run(f"less {outdir}/tmp/{prefix}.single.tmp | awk '$9==\"Single\"' | cut -f -8 > {outdir}/{prefix}.SingleGeneDomain.txt", shell=True)
 
-def CompareSingle(outdir, prefix, window, minN, p_cutoff, chrom, IFdic, minMaxDic):
-    gl = list(minMaxDic.keys())
+    single_df = pd.read_csv(f'{outdir}/tmp/{prefix}.single.tmp', sep='\t', header=None, names=['chrom', 'start', 'end', 'geneid', '1', 'strand', 'p'])
+    single_df['q'] = multipletests(single_df['p'].values, method='fdr_bh')[1]
+    if fdr == True:
+        single_df.query('q < @cutoff').to_csv(f'{outdir}/{prefix}.SingleGeneDomain.txt', sep='\t', header=False, index=False)
+    else:
+        single_df.query('p < @cutoff').to_csv(f'{outdir}/{prefix}.SingleGeneDomain.txt', sep='\t', header=False, index=False)
+
+def CompareSingle(outdir, prefix, window, minN, p_cutoff, filtered, chrom, IFdic, minMaxDic):
+    gl = [g for g in list(minMaxDic.keys()) if g in filtered]
     with open(f'{outdir}/tmp/{prefix}.{chrom}.single.tmp', 'w') as o1:
         for target in gl:
             target_i, target_j = minMaxDic[target]
@@ -256,60 +276,70 @@ def CompareSingle(outdir, prefix, window, minN, p_cutoff, chrom, IFdic, minMaxDi
                         down_contact.append(float(0))
                         
             if target_j - target_i >= minN:
-                p1 = stats.mannwhitneyu(up_contact, target_contact)[1]
-                p2 = stats.mannwhitneyu(down_contact, target_contact)[1]
-                if p1 < p_cutoff and p2 < p_cutoff and np.mean(target_contact) > np.mean(up_contact) and np.mean(target_contact) > np.mean(down_contact):
-                    domain = "Single"
-                else:
-                    domain = "None"
-            else:
-                p1 = 1.0
-                p2 = 1.0
-                domain = "Short"
-            o1.write('\t'.join([chrom, GeneStartDic[target], GeneEndDic[target], target, str(1), GeneStrandDic[target], str(p1), str(p2), domain]) + '\n')
+                p = stats.mannwhitneyu(target_contact, up_contact+down_contact, alternative='greater')[1]
+                o1.write('\t'.join([chrom, GeneStartDic[target], GeneEndDic[target], target, str(1), GeneStrandDic[target], str(p)]) + '\n')
 
-def IdentifyMultiGeneDomain(outdir, prefix, chrEndFragNumDic2, minMaxDic, IFdic, chromlist, maxGeneN, maxDist, p_cutoff, t, minN=3):
+def IdentifyMultiGeneDomain(outdir, prefix, chromLengthDic, minMaxDic, IFdic, chromlist, maxGeneN, maxDist, cutoff, fdr, t, minN=3):
     pool = mp.Pool(processes=t)
-    single_parallel = partial(CompareMulti, outdir, prefix, minN, maxGeneN, maxDist, p_cutoff, chrEndFragNumDic2)
+    single_parallel = partial(CompareMulti, outdir, prefix, minN, maxGeneN, maxDist, chromLengthDic)
     pool.starmap(single_parallel, zip(chromlist, list(IFdic.values()), list(minMaxDic.values())))
     pool.close()
     pool.join()
 
     chroms = ' '.join(chromlist)
-    sp.run(f"parallel -j 1 \"cat {outdir}/tmp/{prefix}.{{1}}.multi.tmp\" ::: $(echo {chroms}) > {outdir}/{prefix}.MultiGeneDomain.txt", shell=True)
+    sp.run(f"parallel -j 1 \"cat {outdir}/tmp/{prefix}.{{1}}.multi.tmp\" ::: $(echo {chroms}) > {outdir}/tmp/{prefix}.multi.tmp", shell=True)
 
-def CompareMulti(outdir, prefix, minN, maxGeneN, maxDist, p_cutoff, chrEndFragNumDic, chrom, IFdic, minMaxDic):
+    multi_df = pd.read_csv(f'{outdir}/tmp/{prefix}.multi.tmp', sep='\t', header=None, names=['chrom', 'start', 'end', 'geneid', 'geneN', 'strand', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6'])
+    multi_df['q1'] = multipletests(multi_df['p1'].values, method='fdr_bh')[1]
+    multi_df['q2'] = multipletests(multi_df['p2'].values, method='fdr_bh')[1]
+    multi_df['q3'] = multipletests(multi_df['p3'].values, method='fdr_bh')[1]
+    multi_df['q4'] = multipletests(multi_df['p4'].values, method='fdr_bh')[1]
+    multi_df['q5'] = multipletests(multi_df['p5'].values, method='fdr_bh')[1]
+    multi_df['q6'] = multipletests(multi_df['p6'].values, method='fdr_bh')[1]
+    if fdr == True:
+        multi_df.query('(q1 < @cutoff) and (q2 < @cutoff) and (q3 < @cutoff) and (q4 < @cutoff) and (q5 < @cutoff) and (q6 < @cutoff)').to_csv(f'{outdir}/{prefix}.MultiGeneDomain.txt', sep='\t', header=False, index=False)
+        multi_df.query('(q1 < @cutoff) and (q2 < @cutoff) and (q3 >= @cutoff) and (q4 >= @cutoff) and (q5 >= @cutoff) and (q6 >= @cutoff)').to_csv(f'{outdir}/{prefix}.GeneToGene.txt', sep='\t', header=False, index=False)
+    else:
+        multi_df.query('(p1 < @cutoff) and (p2 < @cutoff) and (p3 < @cutoff) and (p4 < @cutoff) and (p5 < @cutoff) and (p6 < @cutoff)').to_csv(f'{outdir}/{prefix}.MultiGeneDomain.txt', sep='\t', header=False, index=False)
+        multi_df.query('(p1 < @cutoff) and (p2 < @cutoff) and (p3 >= @cutoff) and (p4 >= @cutoff) and (p5 >= @cutoff) and (p6 >= @cutoff)').to_csv(f'{outdir}/{prefix}.GeneToGene.txt', sep='\t', header=False, index=False)
+
+def CompareMulti(outdir, prefix, minN, maxGeneN, maxDist, chromLengthDic, chrom, IFdic, minMaxDic):
     gl = list(minMaxDic.keys())
     with open(f'{outdir}/tmp/{prefix}.{chrom}.multi.tmp', 'w') as o1:
         i = 0
+        chrom_end = chromLengthDic[chrom]
         while i < len(gl) - 1:
             m = 1
+            target_start = int(GeneStartDic[gl[i]])
+            target_end = int(GeneEndDic[gl[i]])
             while 1:
-                if i+m == len(gl) or m >= maxGeneN:
+                if i+m == len(gl):
                     break
-                p1_1 = CompareForward(minMaxDic, IFdic, gl[i], gl[i+m], minN, maxDist)
-                p1_2 = CompareForward_stack(minMaxDic, IFdic, gl[i], gl[i+1], gl[i+m])
-                if p1_1 != False and p1_1 < p_cutoff and p1_2 < p_cutoff:
-                    p1_3 = CompareForward_oppositeSite(minMaxDic, IFdic, gl[i], gl[i+1], gl[i+m])
-                    p2_1 = CompareBackward(minMaxDic, IFdic, gl[i], gl[i+m], chrEndFragNumDic[chrom])
-                    p2_2 = CompareBackward_stack(minMaxDic, IFdic, gl[i], gl[i+m-1], gl[i+m])
-                    p2_3 = CompareBackward_oppositeSite(minMaxDic, IFdic, gl[i], gl[i+m-1], gl[i+m])
-                    if p1_3 < p_cutoff and p2_1 !=False and p2_1 < p_cutoff and p2_2 < p_cutoff and p2_3 < p_cutoff:
-                        plist = [str(p1_1),str(p1_2),str(p1_3), str(p2_1), str(p2_2), str(p2_3)]
-                        genes = gl[i:i+m+1]                        
-                        strands = list(GeneStrandDic[g] for g in genes)                  
-                        o1.write(chrom + '\t' + GeneStartDic[gl[i]] + '\t' + GeneEndDic[gl[i+m]] + '\t' + ':'.join(genes) + '\t' + str(m+1) + '\t' + ':'.join(strands) + '\t' + '\t'.join(plist) + '\n')                        
-                    m+=1
                 else:
+                    pair_start = int(GeneStartDic[gl[i+m]])
+                    pair_end = int(GeneEndDic[gl[i+m]])
+                ### At the last gene of chromosome || Max number of genes in a multigene domain || Larger than maximum gap between gene pairs
+                if m >= maxGeneN or pair_start-target_end > maxDist:
+                    break 
+                ### At both chromosome ends, no data points obtained for controls
+                elif target_start - (pair_end - target_end) < 0 or pair_end + (pair_start - target_start) > chrom_end:
                     break
+                elif minMaxDic[gl[i+m]][1] - minMaxDic[gl[i]][0] >= minN:
+
+                    p1, p2 = GeneToGene(minMaxDic, IFdic, gl[i], gl[i+m])
+                    p3, p4 = FivePrimeBoundary(minMaxDic, IFdic, gl[i], gl[i+1], gl[i+m])
+                    p5, p6 = ThreePrimeBoundary(minMaxDic, IFdic, gl[i], gl[i+m-1], gl[i+m])
+                    plist = [str(p1), str(p2), str(p3), str(p4), str(p5), str(p6)]
+                    genes = gl[i:i+m+1]
+                    strands = list(GeneStrandDic[g] for g in genes)
+                    o1.write(chrom + '\t' + GeneStartDic[gl[i]] + '\t' + GeneEndDic[gl[i+m]] + '\t' + ':'.join(genes) + '\t' + str(m+1) + '\t' + ':'.join(strands) + '\t' + '\t'.join(plist) + '\n')
+                m+=1
             i+=1
 
-def CompareForward(minMaxDic, IFdic, target, down, minN, maxDist):
+def GeneToGene(minMaxDic, IFdic, target, down):
     target_i, target_j = minMaxDic[target]
     down_i, down_j = minMaxDic[down]
-    if target_i - (down_j - target_j) < 0 or int(GeneStartDic[down])-int(GeneEndDic[target]) > maxDist:
-        return False
-    target_contact = [] ; control_contact = []
+    target_contact = [] ; up_contact = [] ; down_contact = []
     for i in range(target_i, target_j+1):
         for j in range(down_i, down_j+1):
             try:
@@ -317,22 +347,22 @@ def CompareForward(minMaxDic, IFdic, target, down, minN, maxDist):
             except KeyError:
                 target_contact.append(float(0))
             try:
-                control_contact.append(IFdic[str(target_i - (j-target_j)) + '\t' + str(i)])
+                up_contact.append(IFdic[str(target_i - (j-target_j)) + '\t' + str(i)])
             except KeyError:
-                control_contact.append(float(0))
-    if len(target_contact) >= minN:
-        p = stats.mannwhitneyu(target_contact, control_contact)[1]
-        if np.mean(target_contact) < np.mean(control_contact) or np.median(target_contact) == 0 or np.median(control_contact) == 0:
-            p = 1.0
-    else:
-        p = 1.0
-    return p
+                up_contact.append(float(0))
+            try:
+                down_contact.append(IFdic[str(j) + '\t' + str(down_j + down_i - i)])
+            except KeyError:
+                down_contact.append(float(0))
+    p1 = stats.mannwhitneyu(target_contact, up_contact, alternative='greater')[1]
+    p2 = stats.mannwhitneyu(target_contact, down_contact, alternative='greater')[1]
+    return p1, p2
 
-def CompareForward_stack(minMaxDic, IFdic, target, target_next, down):
+def FivePrimeBoundary(minMaxDic, IFdic, target, target_next, down):
     target_i, target_j = minMaxDic[target]
     down_i = minMaxDic[target_next][0]
     down_j = minMaxDic[down][1]
-    target_contact = [] ; control_contact = []
+    target_contact = [] ; up_contact = [] ; down_contact = []
     for i in range(target_i, target_j+1):
         for j in range(down_i, down_j+1):
             try:
@@ -340,40 +370,25 @@ def CompareForward_stack(minMaxDic, IFdic, target, target_next, down):
             except KeyError:
                 target_contact.append(float(0))
             try:
-                control_contact.append(IFdic[str(target_i - (j-target_j)) + '\t' + str(i)])
+                up_contact.append(IFdic[str(target_i - (j-target_j)) + '\t' + str(i)])
             except KeyError:
-                control_contact.append(float(0))
-    p = stats.mannwhitneyu(target_contact, control_contact)[1]
-    if np.mean(target_contact) < np.mean(control_contact) or np.median(target_contact) == 0 or np.median(control_contact) == 0:
-        p = 1.0
-    return p
-
-def CompareBackward(minMaxDic, IFdic, target, down, chromEnd):
-    target_i, target_j = minMaxDic[target]
-    down_i, down_j = minMaxDic[down]
-    if down_j + down_i - target_i > chromEnd:
-        return 1.0
-    target_contact = [] ; control_contact = []
-    for i in range(target_i, target_j+1):
-        for j in range(down_i, down_j+1):
+                up_contact.append(float(0))
             try:
-                target_contact.append(IFdic[str(i) + '\t' + str(j)])
+                down_contact.append(IFdic[str(j) + '\t' + str(down_j + down_i - i)])
             except KeyError:
-                target_contact.append(float(0))
-            try:
-                control_contact.append(IFdic[str(j) + '\t' + str(down_j + down_i - i)])
-            except KeyError:
-                control_contact.append(float(0))
-    p = stats.mannwhitneyu(target_contact, control_contact)[1]
-    if np.mean(target_contact) < np.mean(control_contact) or np.median(target_contact) == 0 or np.median(control_contact) == 0:
-        p = 1.0
-    return p
+                down_contact.append(float(0))
+    try:
+        p3 = stats.mannwhitneyu(target_contact, up_contact, alternative='greater')[1]
+        p4 = stats.mannwhitneyu(target_contact, down_contact, alternative='greater')[1]
+    except ValueError:
+        print(target, down, target_i, target_j, down_i, down_j, target_contact, up_contact, down_contact)
+    return p3, p4
 
-def CompareBackward_stack(minMaxDic, IFdic, target, before_down, down):
+def ThreePrimeBoundary(minMaxDic, IFdic, target, before_down, down):
     target_i = minMaxDic[target][0]
     target_j = minMaxDic[before_down][1]
     down_i, down_j = minMaxDic[down]
-    target_contact = [] ; control_contact = []
+    target_contact = [] ; up_contact = [] ; down_contact = []
     for i in range(target_i, target_j+1):
         for j in range(down_i, down_j+1):
             try:
@@ -381,62 +396,24 @@ def CompareBackward_stack(minMaxDic, IFdic, target, before_down, down):
             except KeyError:
                 target_contact.append(float(0))
             try:
-                control_contact.append(IFdic[str(j) + '\t' + str(down_j + down_i - i)])
+                up_contact.append(IFdic[str(j) + '\t' + str(down_j + down_i - i)])
             except KeyError:
-                control_contact.append(float(0))
-    p = stats.mannwhitneyu(target_contact, control_contact)[1]
-    if np.mean(target_contact) < np.mean(control_contact) or np.median(target_contact) == 0 or np.median(control_contact) == 0:
-        p = 1.0
-    return p
-
-def CompareForward_oppositeSite(minMaxDic, IFdic, target, target_next, down):
-    target_i, target_j = minMaxDic[target]
-    down_i = minMaxDic[target_next][0]
-    down_j = minMaxDic[down][1]
-    target_contact = [] ; control_contact = []
-    for i in range(target_i, target_j+1):
-        for j in range(down_i, down_j+1):
+                up_contact.append(float(0))
             try:
-                target_contact.append(IFdic[str(i) + '\t' + str(j)])
+                down_contact.append(IFdic[str(target_i - (j - target_j)) + '\t' + str(i)])
             except KeyError:
-                target_contact.append(float(0))
-            try:
-                control_contact.append(IFdic[str(j) + '\t' + str(down_j + down_i - i)])
-            except KeyError:
-                control_contact.append(float(0))
-    p = stats.mannwhitneyu(target_contact, control_contact)[1]
-    if np.mean(target_contact) < np.mean(control_contact) or np.median(target_contact) == 0 or np.median(control_contact) == 0:
-        p = 1.0
-    return p
-           
-def CompareBackward_oppositeSite(minMaxDic, IFdic, target, before_down, down):
-    target_i = minMaxDic[target][0]
-    target_j = minMaxDic[before_down][1]
-    down_i, down_j = minMaxDic[down]
-
-    target_contact = [] ; control_contact = []
-    for i in range(target_i, target_j+1):
-        for j in range(down_i, down_j+1):
-            try:
-                target_contact.append(IFdic[str(i) + '\t' + str(j)])
-            except KeyError:
-                target_contact.append(float(0))
-            try:
-                control_contact.append(IFdic[str(target_i - (j - target_j)) + '\t' + str(i)])
-            except KeyError:
-                control_contact.append(float(0))
-    p = stats.mannwhitneyu(target_contact, control_contact)[1]
-    if np.mean(target_contact) < np.mean(control_contact) or np.median(target_contact) == 0 or np.median(control_contact) == 0:
-        p = 1.0
-    return p
+                down_contact.append(float(0))
+    p5 = stats.mannwhitneyu(target_contact, up_contact, alternative='greater')[1]
+    p6 = stats.mannwhitneyu(target_contact, down_contact, alternative='greater')[1]
+    return p5, p6
 
 def MakeAdditionalFiles(outdir, prefix, t):
     sp.run(f"cat {outdir}/{prefix}.SingleGeneDomain.txt {outdir}/{prefix}.MultiGeneDomain.txt | sort -k1,1 -k2,2n -k3,3n > {outdir}/{prefix}.MergedGeneDomain.txt", shell=True)
     sp.run(f"parallel -j {t} \"less {outdir}/{prefix}.{{1}}GeneDomain.txt | awk '{{print \$1, \$2, \$3, \$1, \$2, \$3}}' OFS='\t' > {outdir}/{prefix}.{{1}}GeneDomain.juicebox.bed\" ::: $(echo Single Multi Merged)", shell=True)
 
 def tmpClearing(outdir, prefix, res1, res2, BP_FRAG):
-    sp.run(f"rm {outdir}/tmp/{prefix}.*.tmp {outdir}/tmp/{prefix}.Chr*.txt {outdir}/tmp/{prefix}.*_*.{res1}{BP_FRAG}.matrix.pickle \
-    {outdir}/tmp/{prefix}.*_*.{res2}{BP_FRAG}.matrix.pickle {outdir}/tmp/{prefix}.FragmentGene.{res1}{BP_FRAG}.txt \
+    sp.run(f"rm {outdir}/tmp/{prefix}.*.tmp {outdir}/tmp/{prefix}.Chr*.txt {outdir}/tmp/{prefix}.*_*.{res1}{BP_FRAG}.matrix.pkl \
+    {outdir}/tmp/{prefix}.*_*.{res2}{BP_FRAG}.matrix.pkl {outdir}/tmp/{prefix}.FragmentGene.{res1}{BP_FRAG}.txt \
     {outdir}/tmp/{prefix}.FragmentGene.{res2}{BP_FRAG}.txt", shell=True)
     
 
@@ -460,14 +437,14 @@ if __name__ == '__main__':
         print(f'###Error### Wrong BP_FRAG name : {args.BP_FRAG}')
         sys.exit()
     
-    chromlist, chrStartFragNumDic1, chrEndFragNumDic1, chrStartFragNumDic2, chrEndFragNumDic2, GeneStartDic, GeneEndDic, GeneStrandDic = getVariables(args.chromSize, resfile1, resfile2, args.bedfile)
+    chromlist, chromLengthDic, chrStartFragNumDic1, chrStartFragNumDic2, GeneStartDic, GeneEndDic, GeneStrandDic, genelist = getVariables(args.chromSize, resfile1, resfile2, args.bedfile, args.lcut)
     print('\n HiGDT -- version 1.0.0')
     start_time = time.time()
     if args.skip == False:
         print('\n--skip == False. Starting from a .hic file')
         print('Dump interaction matrices from a .hic file.....\n')
         DumpMatrix(args.outdir, args.prefix, args.juicertools, args.norm, args.hic, args.resolution1, args.resolution2, args.BP_FRAG, chromlist, args.threads)
-        print('Make interaction matrix.pickle.....\n')
+        print('Make interaction matrix.pkl.....\n')
         if args.resolution1 == args.resolution2:
             IFdic1 = MakeIFpickleFiles(args.outdir, args.prefix, chrStartFragNumDic1, chrStartFragNumDic2, chromlist, args.resolution1, args.resolution2, args.BP_FRAG, args.threads)
         else:
@@ -488,17 +465,17 @@ if __name__ == '__main__':
     if args.resolution1 != args.resolution2:
         Gene_minMaxFragDic2 = GetminMaxFragOfGene(args.bedfile, resfile2, args.resolution2, args.outdir, args.prefix, args.BP_FRAG, chromlist)
         print(f'Analyzing multi gene domains.....')
-        IdentifyMultiGeneDomain(args.outdir, args.prefix, chrEndFragNumDic2, Gene_minMaxFragDic2, IFdic2, chromlist, args.maxSize, args.maxDist, args.cutoff2, args.threads)
+        IdentifyMultiGeneDomain(args.outdir, args.prefix, chromLengthDic, Gene_minMaxFragDic2, IFdic2, chromlist, args.maxMultiN, args.maxDist, args.cutoff2, args.fdr, args.threads)
         print(f'Completed. time : {time.time() - start_time}')
     else:
         start_time = time.time()
         print(f'Analyzing multi gene domains.....')
-        IdentifyMultiGeneDomain(args.outdir, args.prefix, chrEndFragNumDic1, Gene_minMaxFragDic1, IFdic1, chromlist, args.maxSize, args.maxDist, args.cutoff2, args.threads)
+        IdentifyMultiGeneDomain(args.outdir, args.prefix, chromLengthDic, Gene_minMaxFragDic1, IFdic1, chromlist, args.maxMultiN, args.maxDist, args.cutoff2, args.fdr, args.threads)
         print(f'Completed. time : {time.time() - start_time}')
     
     start_time = time.time()
     print('\nAnalyzing single gene domains.....')
-    IdentifySingleGeneDomain(args.outdir, args.prefix, Gene_minMaxFragDic1, IFdic1, chromlist, 0.5, args.cutoff1, args.threads)
+    IdentifySingleGeneDomain(args.outdir, args.prefix, Gene_minMaxFragDic1, IFdic1, chromlist, 0.5, args.cutoff1, args.fdr, genelist, args.threads)
     print(f'Completed. time : {time.time() - start_time}')
     
     MakeAdditionalFiles(args.outdir, args.prefix, args.threads)
