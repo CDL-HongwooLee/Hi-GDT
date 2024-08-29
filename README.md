@@ -32,8 +32,8 @@ Hi-GDT starts from .hic file generated from juicer (https://github.com/aidenlab/
 
 ```
 usage: HiGDT.py [-h] -b BEDFILE -c CHROMSIZE -p PREFIX [-j JUICERTOOLS] [-hic HIC] [-n NORM] [--skip] [-i1 INFILE1] [-i2 INFILE2]
-                [-o OUTDIR] [-bf BP_FRAG] [-f RESFILE] [-r1 RESOLUTION1] [-r2 RESOLUTION2] [-c1 CUTOFF1] [-c2 CUTOFF2] [-s MAXSIZE]
-                [-d MAXDIST] [-t THREADS]
+                [-o OUTDIR] [-bf BP_FRAG] [-f RESFILE] [-r1 RESOLUTION1] [-r2 RESOLUTION2] [-c1 CUTOFF1] [-c2 CUTOFF2]
+                [--pvalue] [-l LCUT] [-m MAXMULTIN] [-d MAXDIST] [-t THREADS]
 
 optional arguments:
   -h, --help       show this help message and exit
@@ -52,14 +52,14 @@ optional arguments:
                    Not required if the "--skip" option is used.
                    Default = 'SCALE'.
 
-  --skip           Use this flag to skip generating matrix.pickle file(s) from a .hic file.
-                   You can use this flag if you've previously generated matrix.pickle file(s) using HiGDT.py.
-                   if set, -i1 {matrix.pickle} [-i2 {matrix2.pickle}] option(s) is required for input file(s).
+  --skip           Use this flag to skip generating matrix.pkl file(s) from a .hic file.
+                   You can use this flag if you've previously generated matrix.pkl file(s) using HiGDT.py.
+                   if set, -i1 {matrix.pkl} [-i2 {matrix2.pkl}] option(s) is required for input file(s).
 
-  -i1 INFILE1      Path to the input matrix.pickle file generated at resolution1 (r1).
-                   By default, this file is generated at {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pickle.
+  -i1 INFILE1      Path to the input matrix.pkl file generated at resolution1 (r1).
+                   By default, this file is generated at {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pkl.
 
-  -i2 INFILE2      Path to the input matrix.pickle file generated at resolution2 (r2).
+  -i2 INFILE2      Path to the input matrix.pkl file generated at resolution2 (r2).
                    Required only if r1 != r2.
 
   -o OUTDIR        Path to the output directory where whole output files will be written.
@@ -81,13 +81,20 @@ optional arguments:
                    r2 = 500 (BP) or r2 = 2 (FRAG) is recommended if you have enough sequencing depth.
                    Default = 500 (BP).
 
-  -c1 CUTOFF1      P-value cutoff for single-gene domain analysis.
+  -c1 CUTOFF1      Statistical cutoff value for single-gene domain analysis.
                    Default = 0.05.
 
   -c2 CUTOFF2      P-value cutoff for multi-gene domain analysis.
                    Default = 0.05.
 
-  -s MAXSIZE       The maximum number of genes in a multi-gene domain.
+  --pvalue         Using P-value instead of false discovery rate (fdr).
+                   Default = False. (Use FDR)
+
+  -l LCUT          The size cutoff (bp) of genes for the comparison.
+                   Should be larger than (resolution x 4).
+                   Default = 1000.
+
+  -m MAXMULTIN     The maximum number of genes in a multi-gene domain.
                    Larger number may slow down the analysis.
                    Default = 10.
 
@@ -109,11 +116,11 @@ python3 HiGDT.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -b Araport11_ge
 ```
 
 
-Or (if you generated matrix.pickle files before, the below is slightly faster command)
+Or (if you generated matrix.pkl files before, the below is slightly faster command)
 
 
 ```
-python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pickle -i2 example/Athaliana.500BP.matrix.pickle -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana.v2 -bf BP -r1 250 -r2 500 -t 5
+python3 HiGDT.py --skip -i1 example/Athaliana.250BP.matrix.pkl -i2 example/Athaliana.500BP.matrix.pkl -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o example -p Athaliana.v2 -bf BP -r1 250 -r2 500 -t 5
 ```
 
 ### Input data format
@@ -128,9 +135,9 @@ Chr1    3631    5899    AT1G01010       .       +
 Chr1    6788    9130    AT1G01020       .       -
 ```
 
-#### Matrix.pickle file
-```HiGDT.py``` generates compressed .matrix.pickle files that includes dumped Hi-C matrix information in dictionary format.
-A matrix.pickle file can be used as input for ```HiGDT.py``` and ```PileUpImage.py```
+#### Matrix.pkl file
+```HiGDT.py``` generates compressed .matrix.pkl files that includes dumped Hi-C matrix information in dictionary format.
+A matrix.pkl file can be used as input for ```HiGDT.py``` and ```PileUpImage.py```
 
 ### Output data format
 ```HiGDT.py``` makes 8 (when r1==r2) or 10 (r1!=r2) files in the specified output directory.
@@ -153,8 +160,8 @@ SingleGeneDomain.txt
 
 
 ```
-Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues1-2
-Chr1    23121   31227   AT1G01040       1       +       2.17e-12  3.33e-05
+Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalue qvalue
+Chr1    3631    5899    AT1G01010    1    +    0.0034741208809897    0.018066995264745533
 ```
 
 
@@ -162,8 +169,8 @@ MultiGeneDomain.txt
 
 
 ```
-Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues1-6
-Chr1    23121   33171   AT1G01040:AT1G01050     2       +:-     1.53e-08  1.53e-08  3.34e-17  3.34e-17  3.34e-17  1.53e-08
+Chromosome  start  end  Labels(geneIDs)  Ngenes  strands pvalues1-6 qvalue1-6
+Chr1    72339    84946    AT1G01160:AT1G01170:AT1G01180:AT1G01190    4    +:-:+:-    3.6e-04	2.4e-05	1.3e-06	3.5e-05	1.3e-05	3.3e-06	5.2e-03 6.1e-04	1.2e-05	1.9e-04	9.8e-05	2.1e-05
 ```
 
 #### Single, Multi, MergedGeneDomain.juicebox.bed
@@ -175,81 +182,80 @@ Modified output files for juicebox visualization.
 ### Usage
 
 ```
-usage: HiGDTdiff.py [-h] -pk1 PICKLE1 -pk2 PICKLE2 -gd1 GENEDOMAIN1 -gd2 GENEDOMAIN2 -b BEDFILE -r REFILE -p PREFIX [-f FLANKING] [-l LCUT] [-fc FC] [-c CUTOFF] [-o OUTDIR] [--norm]
+usage: HiGDTdiff.py [-h] -pkl1 PICKLE1 -pkl2 PICKLE2 -b BEDFILE -r REFILE -p PREFIX [-f FLANKING] [-l LCUT] [-fc FC] [-c CUTOFF] [--pvalue] [-o OUTDIR] [--unnorm]
 
 optional arguments:
-  -h, --help        show this help message and exit
-  -pk1 PICKLE1      Path to the matrix1.pickle file for the control sample.
-                    By default, this file is generated by HiGDT.py and is located at {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pickle.
+  -h, --help     show this help message and exit
+  -pkl1 PICKLE1  Path to the matrix1.pkl file for the control sample.
+                 By default, this file is generated by HiGDT.py and is located at {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pkl.
 
-  -pk2 PICKLE2      Path to the matrix2.pickle file for the treat sample'
-                    By default, this file is generated by HiGDT.py and is located at {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pickle.
+  -pkl2 PICKLE2  Path to the matrix2.pkl file for the treat sample'
+                 By default, this file is generated by HiGDT.py and is located at {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pkl.
 
-  -gd1 GENEDOMAIN1  Path to the HiGDT output file of the control sample including single-gene domains.
-                    By default, this file is generated by HiGDT.py and is located at {outdir}/{prefix}.SingeGeneDomain.txt
+  -b BEDFILE     Path to the .bed file which includes genic information.
+                 The 4th column should contain labels for each element.
 
-  -gd2 GENEDOMAIN2  Path to the HiGDT output file of the treat sample including single-gene domains.
-                    By default, this file is generated by HiGDT.py and is located at {outdir}/{prefix}.SingeGeneDomain.txt
+  -r REFILE      Path to the fragment.bed file, which is composed of 'chromosome', 'fragment_start', 'fragment_end', 'fragment_number'.
+                 The resolution of this file must match that of matrix.pkl files.
+                 Both fixed intervals and restriction fragment intervals are allowed.
+                 By default, this file is generated by HiGDT.py at {outdir}/{prefix}.{resolution}{BP/FRAG}.bed.
 
-  -b BEDFILE        Path to the .bed file which includes genic information.
-                    The 4th column should contain labels for each element.
+  -p PREFIX      Prefix for naming output files.
 
-  -r REFILE         Path to the fragment.bed file, which is composed of 'chromosome', 'fragment_start', 'fragment_end', 'fragment_number'.
-                    The resolution of this file must match that of matrix.pickle files.
-                    Both fixed intervals and restriction fragment intervals are allowed.
-                    By default, this file is generated by HiGDT.py at {outdir}/{prefix}.{resolution}{BP/FRAG}.bed.
+  -f FLANKING    The size of surrounding regions (bp) for the comparison.
+                 The recommended range is 1000-3000 bp.
+                 Default = 2000.
 
-  -p PREFIX         Prefix for naming output files.
+  -l LCUT        The size cutoff (bp) of genes for the comparison.
+                 Should be larger than (resolution x 4).
+                 Default = 1000.œ
 
-  -f FLANKING       The size of surrounding regions (bp) for the comparison.
-                    The recommended range is 1000-3000 bp.
-                    Default = 2000.
+  -fc FC         The fold chage cutoff for comparing contact frequencies within gene body and surrounding flanking regions.
+                 The fold chage values of average contact frequency (CF) are calculated.
+                 e.g. The value 0.1 indicates (Surrounding CF in treatment)/(Surrounding CF in control) < (1 - 0.1)
+                      & (Gene body CF in control)/(Gene body CF in treatment) < (1 - 0.1)
 
-  -l LCUT           The size cutoff (bp) of genes for the comparison.
-                    Should be larger than (resolution x 4).
-                    Default = 1000.
+  -c CUTOFF      The statistical cutoff value for comparing surrounding contact frequencies.
+                 Default = 0.05.
 
-  -fc FC            The fold chage cutoff for comparing surrounding contact frequencies.
-                    The fold chage of average contact frequencies (ACFs) within surrounding regions are calculated.
-                    e.g. The value 0.2 means (Control ACFs) > (1-0.2) X (Treat ACFs).
-                    Default = 0.2 (0 < FC < 1).
+  --pvalue       Using P-value instead of false discovery rate (fdr).
+                 Default = False. (Use FDR)
 
-  -c CUTOFF         The P-value cutoff value for comparing surrounding contact frequencies.
-                    Default = 0.05.
+  -o OUTDIR      Path to the output directory where all output files will be written.
+                 Default = './'.
 
-  -o OUTDIR         Path to the output directory where all output files will be written.
-                    Default = './'.
-
-  --norm            Normalize o/e values by the sum of genome-wide surrounding contact frequencies.
-                    Default = False.
+  --unnorm       Normalize o/e values by the sum of genome-wide contact frequencies within gene body or surrounding regions.
+                 Default = False. (Do normalization)
 
 ```
 
 ### Example run
 
 ```
-python3 HiGDTdiff.py -pk1 example/Athaliana_Control.250BP.matrix.pickle -pk2 example/Athaliana_Treat.250BP.matrix.pickle -gd1 example/Athaliana_Control.SingleGeneDomain.txt -gd2 example/Athaliana_Treat.SingleGeneDomain.txt 
--b Araport11_gene_protein_coding.1-genes.bed -r example/Athaliana_Control.250BP.bed -f 2000 -l 1000 -fc 0.15 -o example -p Athaliana_diff --norm
+python3 HiGDTdiff.py -pk1 example/Control.250BP.matrix.pkl -pk2 example/Treat.250BP.matrix.pkl -b Araport11_gene_protein_coding.1-genes.bed -r example/Control.250BP.bed -f 2000 -l 1000 -fc 0.1 -c 0.05 -o example/ -p Athaliana_diff
 ```
 
 ### Input information
-All input files except .bed file are produced from ```HiGDT.py```.
+All input files except ```Araport11_gene_protein_coding.1-genes.bed``` file are produced from ```HiGDT.py```.
 
 ### Output data format
 Output file is generated with the name of {prefix}.HiGDTdiff.out.txt.
 
 
-This file contains information of surrounding contact frequencies (SFCs).
 
 ```
-Label(geneID)  length  avg.SFCs_in_control  avg.SFCs_in_treat  p_value  difference_of_SFCs
+GeneID  P-value  Q-value  FoldChange(surrounding contacts)  FoldChange(genebody contacts)  Domain_changes
 
-AT1G03660       2499    0.9165746591988603      0.6724238539999999      0.01098992240721745     activated in treatment
-AT1G05160       3628    0.980855183033591       1.3256988979375 0.012483098145865642    activated in control
+AT1G01010    0.91    0.96    0.97    1.06    Not significant
+...
+AT1G01490    0.002    0.027    0.89    1.16    Insulated in treatment
+...
+AT1G01590    5.6e-05    2.3e-03    1.27    0.86    Insulated in control
+...
+
 ```
 
-
-'Activate in treatment' indicates SFCs significantly decreased in treatment Hi-C data
+'Insulated in treatment' indicates the insulation of a single-gene domain is enhanced in treat Hi-C data compared to control Hi-C data
 
 
 ## PileUpImage.py
@@ -257,8 +263,7 @@ AT1G05160       3628    0.980855183033591       1.3256988979375 0.01248309814586
 ### Usage
 
 ```
-usage: PileUpImage.py [-h] -b BEDFILE -c CHROMSIZE -f REFILE -p PREFIX -r RESOLUTION [-j JUICERTOOLS] [-hic HIC] [-n NORM] [--skip] [-i INFILE] [-bf BP_FRAG] [-s IMGSIZE] [-bs BINSIZE] [-pad PADDING] [-o OUTDIR]
-                      [-t THREADS]
+usage: PileUpImage.py [-h] -b BEDFILE -c CHROMSIZE -f REFILE -p PREFIX -r RESOLUTION [-j JUICERTOOLS] [-hic HIC] [-n NORM] [--skip] [-i INFILE] [-bf BP_FRAG] [-s IMGSIZE] [-bs BINSIZE] [-pad PADDING] [-o OUTDIR] [-t THREADS]
 
 optional arguments:
   -h, --help      show this help message and exit
@@ -268,12 +273,12 @@ optional arguments:
   -c CHROMSIZE    Path to the .chrom.sizes file.
 
   -f REFILE       Path to the fragment.bed file which is composed of 'chromosome', 'fragment_start', 'fragment_end', 'fragment_number'.
-                  The resolution of this file should match with that of matrix.pickle files.
+                  The resolution of this file should match with that of matrix.pkl files.
                   Both fixed intervals and restriction fragment intervals can be used.
                   By default, this file is generated by HiGDT.py as {outdir}/{prefix}.{resolution}{BP/FRAG}.bed.
 
   -p PREFIX       Prefix for naming the output file.
-                  {outdir}/{prefix}.pickle will be generated.
+                  {outdir}/{prefix}.pkl will be generated.
 
   -r RESOLUTION   Resolution of input matrix.
 
@@ -285,12 +290,12 @@ optional arguments:
                   Not required if the "--skip" option is used.
                   Default = 'SCALE'.
 
-  --skip          Use this flag to skip generating matrix.pickle file from a .hic file.
-                  You can use this flag if you've previously generated matrix.pickle file using or PileupGeneDomain.py or HiGDT.py.
+  --skip          Use this flag to skip generating matrix.pkl file from a .hic file.
+                  You can use this flag if you've previously generated matrix.pkl file using or PileupGeneDomain.py or HiGDT.py.
                   if set, -i {matrix.pickle} option is required for input file.
 
-  -i INFILE       Path to the input matrix.pickle file.
-                  By default, this file is generated as {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pickle by PileupGeneDomain.py or HiGDT.py.
+  -i INFILE       Path to the input matrix.pkl file.
+                  By default, this file is generated as {outdir}/{prefix}.{resolution}{BP/FRAG}.matrix.pkl by PileupGeneDomain.py or HiGDT.py.
 
   -bf BP_FRAG     The unit of resolution; basepair or restriction fragment.
                   Choose one of ["BP", "FRAG"].
@@ -329,11 +334,11 @@ python3 PileUpImage.py -j juicer_tools.jar -hic Athaliana.hic -n SCALE -r 250 -f
 ```
 
 
-Or (if you generated matrix.pickle files before, the below is slightly faster command).
+Or (if you generated matrix.pkl files before, the below is slightly faster command).
 
 
 ```
-python3 PileUpImage.py --skip -i example/Athaliana.250BP.matrix.pickle -bf BP -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5
+python3 PileUpImage.py --skip -i example/Athaliana.250BP.matrix.pkl -bf BP -r 250 -f example/Athaliana.250BP.bed -b Araport11_gene_protein_coding.1-genes.bed -c TAIR10_chr_all.chrom.sizes -o pileup -p Athaliana -t 5
 ```
 
 ### Output data format
