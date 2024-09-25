@@ -1,4 +1,4 @@
-# Hi-GDT : A Hi-C-based 3D gene domain analysis tool for analyzing local chromatin contacts in _Arabidopsis_
+# Hi-GDT : A Hi-C-based 3D gene domain analysis tool for analyzing local chromatin contacts in plants
   
 ![Picture1](https://github.com/user-attachments/assets/27400eb4-6ccd-4327-824a-f8e754dfbe13)
 
