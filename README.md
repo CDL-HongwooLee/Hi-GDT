@@ -3,7 +3,8 @@
 ![Picture1](https://github.com/user-attachments/assets/f7db1078-e67c-4ee4-9540-594578f8351e)
 
 For any question about Hi-GDT, please contact miso5103@snu.ac.kr
-Examples and raw data files are available at https://zenodo.org/records/14728732
+
+Example and raw data files are available at https://zenodo.org/records/14728732
 
 ## Dependencies
 python3 >= 3.8.
